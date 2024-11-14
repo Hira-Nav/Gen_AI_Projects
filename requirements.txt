@@ -5,4 +5,4 @@ pandas==1.4.0
 numpy==1.25.2
 plotly==5.3.1
 langchain==0.0.301
-openai==0.28.1
+openai==2.0.0
