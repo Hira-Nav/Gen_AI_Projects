@@ -1,9 +1,13 @@
 #llm-quickstart model https://docs.streamlit.io/develop/tutorials/llms/llm-quickstart
 
 import streamlit as st
-from langchain_openai.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage
-
+import whisper
+from gtts import gTTS
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
+import tempfile
+import os
 
 
 st.title('🦜🔗 ChatGPT-like Clone using LangChain')
