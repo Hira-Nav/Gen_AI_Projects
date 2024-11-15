@@ -44,6 +44,16 @@ class SpeechToTextProcessor(AudioProcessorBase):
         os.unlink(self.recorder.name)
         return result["text"]
 
+if webrtc_ctx:
+    # Check if the webrtc context is available before starting the transcription
+    if webrtc_ctx.audio_processor:
+        st.write("Recording...")
+        transcription = webrtc_ctx.audio_processor.get_transcription()
+        st.write(f"Transcription: {transcription}")
+    else:
+        st.warning("Microphone not detected. Please check permissions.")
+
+
 # Live transcription using microphone
 live_transcription = ""
 if st.button("Start Live Speech-to-Text"):
