@@ -44,29 +44,28 @@ class SpeechToTextProcessor(AudioProcessorBase):
         os.unlink(self.recorder.name)
         return result["text"]
 
-if webrtc_ctx:
-    # Check if the webrtc context is available before starting the transcription
-    if webrtc_ctx.audio_processor:
-        st.write("Recording...")
-        transcription = webrtc_ctx.audio_processor.get_transcription()
-        st.write(f"Transcription: {transcription}")
-    else:
-        st.warning("Microphone not detected. Please check permissions.")
 
+# Checkbox to toggle start/stop recording
+recording = st.checkbox("Start Recording", value=False)
 
-# Live transcription using microphone
-live_transcription = ""
-if st.button("Start Live Speech-to-Text"):
+if recording:
+    # Stream live audio
+    st.write("Recording in progress...")
+
+    # WebRTC Streamer for live audio capture
     webrtc_ctx = webrtc_streamer(
         key="speech-to-text",
         mode=WebRtcMode.SENDRECV,
         audio_processor_factory=SpeechToTextProcessor,
         media_stream_constraints={"audio": True, "video": False},
     )
-
+    
+    # Display transcription as audio is processed
     if webrtc_ctx.audio_processor:
-        live_transcription = webrtc_ctx.audio_processor.get_transcription()
-        st.info(f"Live Transcription: {live_transcription}")
+        transcription = webrtc_ctx.audio_processor.get_transcription()
+        st.write(f"Live Transcription: {transcription}")
+else:
+    st.write("Recording is stopped.")
 
 # Initialize session state for chat
 if "messages" not in st.session_state:
