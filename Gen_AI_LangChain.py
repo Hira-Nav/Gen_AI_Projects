@@ -2,6 +2,8 @@
 
 import streamlit as st
 from langchain_openai.chat_models import ChatOpenAI
+from langchain.schema import HumanMessage, AIMessage
+
 
 
 st.title('🦜🔗 ChatGPT-like Clone using LangChain')
