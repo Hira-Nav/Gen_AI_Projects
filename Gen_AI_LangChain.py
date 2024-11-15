@@ -1,5 +1,4 @@
 #llm-quickstart model https://docs.streamlit.io/develop/tutorials/llms/llm-quickstart
-pip install langchain_openai
 
 import streamlit as st
 from langchain_openai.chat_models import ChatOpenAI
