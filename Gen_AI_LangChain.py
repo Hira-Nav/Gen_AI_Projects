@@ -4,7 +4,7 @@ import streamlit as st
 from langchain_openai.chat_models import ChatOpenAI
 
 
-st.title('🦜🔗 Quickstart App')
+st.title('🦜🔗 ChatGPT-like Clone using LangChain')
 
 # Sidebar for API key input
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
@@ -26,19 +26,20 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Handle user input
-if prompt := st.chat_input("What is up?"):
+if prompt := st.chat_input("hi, how can i help?"):
     # Add user message to session state
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # Prepare messages for LangChain Human and AI
+    formatted_messages = [
+        HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"])
+        for m in st.session_state.messages
+    ]
+
     # Generate assistant response using LangChain
     with st.chat_message("assistant"):
-        response = model.predict(
-            messages=[
-                {"role": msg["role"], "content": msg["content"]}
-                for msg in st.session_state.messages
-            ]
-        )
-        st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        response = model.predict_messages(formatted_messages)
+        st.markdown(response.content)
+        st.session_state.messages.append({"role": "assistant", "content": response.content})
