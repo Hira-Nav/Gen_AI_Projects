@@ -18,6 +18,42 @@ else:
     st.warning("Please enter a valid OpenAI API key!", icon="⚠")
     st.stop()
 
+# Whisper Model
+@st.cache_resource
+def load_whisper_model():
+    return whisper.load_model("base")
+
+whisper_model = load_whisper_model()
+
+# AudioProcessor for live microphone input
+class SpeechToTextProcessor(AudioProcessorBase):
+    def __init__(self):
+        self.recorder = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+
+    def recv_audio(self, frame):
+        self.recorder.write(frame.to_ndarray().tobytes())
+        return frame
+
+    def get_transcription(self):
+        self.recorder.flush()
+        result = whisper_model.transcribe(self.recorder.name)
+        os.unlink(self.recorder.name)
+        return result["text"]
+
+# Live transcription using microphone
+live_transcription = ""
+if st.button("Start Live Speech-to-Text"):
+    webrtc_ctx = webrtc_streamer(
+        key="speech-to-text",
+        mode=WebRtcMode.SENDRECV,
+        audio_processor_factory=SpeechToTextProcessor,
+        media_stream_constraints={"audio": True, "video": False},
+    )
+
+    if webrtc_ctx.audio_processor:
+        live_transcription = webrtc_ctx.audio_processor.get_transcription()
+        st.info(f"Live Transcription: {live_transcription}")
+
 # Initialize session state for chat
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -45,3 +81,9 @@ if prompt := st.chat_input("hi, how can i help?"):
         response = model.predict_messages(formatted_messages)
         st.markdown(response.content)
         st.session_state.messages.append({"role": "assistant", "content": response.content})
+
+        # Convert assistant response to audio
+        tts = gTTS(response.content)
+        audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+        tts.save(audio_file.name)
+        st.audio(audio_file.name, format="audio/mp3")
