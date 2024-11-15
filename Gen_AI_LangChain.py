@@ -46,10 +46,12 @@ class SpeechToTextProcessor(AudioProcessorBase):
 
 
 # Checkbox to toggle start/stop recording
-recording = st.checkbox("Start Recording", value=False)
+# Buttons to start and stop recording
+start_button = st.button("Start Recording")
+stop_button = st.button("Stop Recording")
 
-if recording:
-    # Stream live audio
+# State to manage recording status
+if start_button:
     st.write("Recording in progress...")
 
     # WebRTC Streamer for live audio capture
@@ -59,13 +61,14 @@ if recording:
         audio_processor_factory=SpeechToTextProcessor,
         media_stream_constraints={"audio": True, "video": False},
     )
-    
+
     # Display transcription as audio is processed
     if webrtc_ctx.audio_processor:
         transcription = webrtc_ctx.audio_processor.get_transcription()
         st.write(f"Live Transcription: {transcription}")
-else:
-    st.write("Recording is stopped.")
+
+elif stop_button:
+    st.write("Recording stopped.")
 
 # Initialize session state for chat
 if "messages" not in st.session_state:
