@@ -58,6 +58,7 @@ class SpeechToTextProcessor(AudioProcessorBase):
         # Transcribe with Whisper
         transcription_result = whisper_model.transcribe(temp_audio_file.name)
         os.unlink(temp_audio_file.name)  # Cleanup temporary file
+        self.audio_frames = []  # Reset frames for the next transcription
         return transcription_result.get("text", "")
 
 # Initialize session state for chat and transcription
@@ -78,16 +79,18 @@ webrtc_ctx = webrtc_streamer(
 if webrtc_ctx and webrtc_ctx.audio_processor:
     transcription = webrtc_ctx.audio_processor.get_transcription()
     if transcription:
-        st.session_state.live_transcription = transcription
+        st.session_state.live_transcription += transcription + " "
+        st.experimental_rerun()  # Ensure the interface updates immediately
 
-    # Display live transcription dynamically
-    st.text_area("Live Transcription:", st.session_state.live_transcription, height=150)
+# Display live transcription
+st.text_area("Live Transcription:", st.session_state.live_transcription, height=150)
 
-    # Send transcription to chat
-    if st.button("Send Transcription to Chat"):
-        st.session_state.messages.append({"role": "user", "content": st.session_state.live_transcription})
+# Send transcription to chat
+if st.button("Send Transcription to Chat"):
+    if st.session_state.live_transcription.strip():
+        st.session_state.messages.append({"role": "user", "content": st.session_state.live_transcription.strip()})
         with st.chat_message("user"):
-            st.markdown(st.session_state.live_transcription)
+            st.markdown(st.session_state.live_transcription.strip())
 
         # Generate assistant response
         formatted_messages = [
@@ -106,6 +109,9 @@ if webrtc_ctx and webrtc_ctx.audio_processor:
         audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         tts.save(audio_file.name)
         st.audio(audio_file.name, format="audio/mp3")
+
+        # Clear live transcription after sending
+        st.session_state.live_transcription = ""
 
 # Display chat history
 for message in st.session_state.messages:
