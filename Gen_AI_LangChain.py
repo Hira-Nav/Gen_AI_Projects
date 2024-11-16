@@ -3,17 +3,19 @@
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage
-import whisper
 from gtts import gTTS
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
+import whisper
 import tempfile
 import os
+import numpy as np
+from pydub import AudioSegment
 
+# App Title
+st.title("🎙️ Live Speech-to-Text and Chat with LangChain")
 
-st.title('🦜🔗 ChatGPT-like Clone using LangChain')
-
-# Sidebar for API key input
-openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
+# Sidebar for OpenAI API Key
+openai_api_key = st.sidebar.text_input("Enter OpenAI API Key", type="password")
 
 # Validate API Key and Initialize LangChain Model
 if openai_api_key.startswith("sk-"):
@@ -33,31 +35,36 @@ whisper_model = load_whisper_model()
 class SpeechToTextProcessor(AudioProcessorBase):
     def __init__(self):
         self.audio_frames = []
-        self.temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
 
     def recv_audio(self, frame):
         self.audio_frames.append(frame.to_ndarray())
         return frame
 
     def get_transcription(self):
-        # Combine audio frames and save to a temporary WAV file
-        from pydub import AudioSegment
-        audio = AudioSegment(
-            data=b"".join([frame.tobytes() for frame in self.audio_frames]),
+        if not self.audio_frames:
+            return None
+
+        # Combine audio frames and save as WAV
+        audio_data = np.concatenate(self.audio_frames, axis=0).astype(np.int16)
+        audio_segment = AudioSegment(
+            data=audio_data.tobytes(),
             sample_width=2,
             frame_rate=48000,
             channels=1,
         )
-        audio.export(self.temp_file.name, format="wav")
+        temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        audio_segment.export(temp_audio_file.name, format="wav")
 
-        # Transcribe using Whisper
-        transcription_result = whisper_model.transcribe(self.temp_file.name)
-        os.unlink(self.temp_file.name)  # Clean up temporary file
-        return transcription_result["text"]
+        # Transcribe with Whisper
+        transcription_result = whisper_model.transcribe(temp_audio_file.name)
+        os.unlink(temp_audio_file.name)  # Cleanup temporary file
+        return transcription_result.get("text", "")
 
-# Initialize session state for chat
+# Initialize session state for chat and transcription
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "live_transcription" not in st.session_state:
+    st.session_state.live_transcription = ""
 
 # WebRTC Streamer for Real-Time Audio Input
 webrtc_ctx = webrtc_streamer(
@@ -67,63 +74,64 @@ webrtc_ctx = webrtc_streamer(
     media_stream_constraints={"audio": True, "video": False},
 )
 
-# Live Transcription and Interaction
+# Live Transcription Output
 if webrtc_ctx and webrtc_ctx.audio_processor:
     transcription = webrtc_ctx.audio_processor.get_transcription()
     if transcription:
-        st.info(f"🎤 Transcription: {transcription}")
+        st.session_state.live_transcription = transcription
 
-        # Add transcription to chat and process response
-        if st.button("Send Transcription to Chat"):
-            # Add user transcription to chat history
-            st.session_state.messages.append({"role": "user", "content": transcription})
-            with st.chat_message("user"):
-                st.markdown(transcription)
+    # Display live transcription dynamically
+    st.text_area("Live Transcription:", st.session_state.live_transcription, height=150)
 
-            # Prepare formatted messages for LangChain
-            formatted_messages = [
-                HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"])
-                for m in st.session_state.messages
-            ]
+    # Send transcription to chat
+    if st.button("Send Transcription to Chat"):
+        st.session_state.messages.append({"role": "user", "content": st.session_state.live_transcription})
+        with st.chat_message("user"):
+            st.markdown(st.session_state.live_transcription)
 
-            # Generate LangChain response
-            with st.chat_message("assistant"):
-                response = model.predict_messages(formatted_messages)
-                st.markdown(response.content)
-                st.session_state.messages.append({"role": "assistant", "content": response.content})
-
-                # Convert response to audio
-                tts = gTTS(response.content)
-                audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-                tts.save(audio_file.name)
-                st.audio(audio_file.name, format="audio/mp3")
-
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Text Input for Manual Chat
-if prompt := st.chat_input("Type your message..."):
-    # Add user input to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Prepare messages for LangChain
-    formatted_messages = [
-        HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"])
-        for m in st.session_state.messages
-    ]
-
-    # Generate LangChain response
-    with st.chat_message("assistant"):
+        # Generate assistant response
+        formatted_messages = [
+            HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"])
+            for m in st.session_state.messages
+        ]
         response = model.predict_messages(formatted_messages)
-        st.markdown(response.content)
         st.session_state.messages.append({"role": "assistant", "content": response.content})
+
+        # Display response
+        with st.chat_message("assistant"):
+            st.markdown(response.content)
 
         # Convert assistant response to audio
         tts = gTTS(response.content)
         audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         tts.save(audio_file.name)
         st.audio(audio_file.name, format="audio/mp3")
+
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Manual Text Input for Chat
+if prompt := st.chat_input("Type your message here..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Generate assistant response
+    formatted_messages = [
+        HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"])
+        for m in st.session_state.messages
+    ]
+    response = model.predict_messages(formatted_messages)
+    st.session_state.messages.append({"role": "assistant", "content": response.content})
+
+    # Display response
+    with st.chat_message("assistant"):
+        st.markdown(response.content)
+
+    # Convert response to audio
+    tts = gTTS(response.content)
+    audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+    tts.save(audio_file.name)
+    st.audio(audio_file.name, format="audio/mp3")
