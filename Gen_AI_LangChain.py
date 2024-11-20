@@ -40,11 +40,11 @@ class SpeechToTextProcessor(AudioProcessorBase):
         self.audio_frames.append(frame.to_ndarray())
         return frame
 
-    def get_transcription(self):
+    def save_audio(self):
         if not self.audio_frames:
             return None
 
-        # Combine audio frames and save as WAV
+        # Combine audio frames into a WAV file
         audio_data = np.concatenate(self.audio_frames, axis=0).astype(np.int16)
         audio_segment = AudioSegment(
             data=audio_data.tobytes(),
@@ -54,43 +54,67 @@ class SpeechToTextProcessor(AudioProcessorBase):
         )
         temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
         audio_segment.export(temp_audio_file.name, format="wav")
+        return temp_audio_file.name
 
-        # Transcribe with Whisper
-        transcription_result = whisper_model.transcribe(temp_audio_file.name)
-        os.unlink(temp_audio_file.name)  # Cleanup temporary file
-        self.audio_frames = []  # Reset frames for the next transcription
-        return transcription_result.get("text", "")
+# Choice: Record Audio or Upload File
+option = st.radio("Select Input Method", ["Record Audio", "Upload Audio File"])
 
-# Initialize session state for chat and transcription
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "live_transcription" not in st.session_state:
-    st.session_state.live_transcription = ""
+if option == "Record Audio":
+    # WebRTC streamer setup
+    webrtc_ctx = webrtc_streamer(
+        key="audio-record",
+        mode=WebRtcMode.SENDRECV,
+        audio_processor_factory=SpeechToTextProcessor,
+        media_stream_constraints={"audio": True, "video": False},
+    )
 
-# WebRTC Streamer for Real-Time Audio Input
-webrtc_ctx = webrtc_streamer(
-    key="speech-to-text",
-    mode=WebRtcMode.SENDRECV,
-    audio_processor_factory=SpeechToTextProcessor,
-    media_stream_constraints={"audio": True, "video": False},
-)
+    if webrtc_ctx and webrtc_ctx.audio_processor:
+        if st.button("Stop and Transcribe"):
+            # Save and transcribe audio
+            audio_file_path = webrtc_ctx.audio_processor.save_audio()
+            if audio_file_path:
+                st.success("Audio recorded successfully!")
+                st.audio(audio_file_path, format="audio/wav")
 
-# Live Transcription Output
-if webrtc_ctx and webrtc_ctx.audio_processor:
-    transcription = webrtc_ctx.audio_processor.get_transcription()
-    if transcription:
-        st.session_state.live_transcription += transcription + " "
-        st.experimental_rerun()  # Ensure the interface updates immediately
+                # Transcription using Whisper
+                transcription = whisper_model.transcribe(audio_file_path)
+                st.text_area("Transcription:", transcription.get("text", ""))
+                os.unlink(audio_file_path)  # Clean up temporary file
+            else:
+                st.error("No audio was recorded.")
 
-# Display live transcription
-st.text_area("Live Transcription:", st.session_state.live_transcription, height=150)
+elif option == "Upload Audio File":
+    uploaded_file = st.file_uploader("Upload a WAV file:", type=["wav"])
+    if uploaded_file is not None:
+        # Save uploaded file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
+            temp_audio_file.write(uploaded_file.read())
+            temp_audio_path = temp_audio_file.name
 
-# Send transcription to chat
+        st.success("File uploaded successfully!")
+        st.audio(temp_audio_path, format="audio/wav")
+
+        # Transcribe uploaded audio using Whisper
+        transcription = whisper_model.transcribe(temp_audio_path)
+        st.text_area("Transcription:", transcription.get("text", ""))
+        os.unlink(temp_audio_path)  # Clean up temporary file
+
+# LangChain Integration for Transcriptions
 if st.button("Send Transcription to Chat"):
-    if st.session_state.live_transcription.strip():
-        st.session_state.messages.append({"role": "user", "content": st.session_state.live_transcription.strip()})
+    # Get the transcription text
+    if option == "Record Audio" and webrtc_ctx and webrtc_ctx.audio_processor:
+        transcription_text = webrtc_ctx.audio_processor.save_audio()
+    elif option == "Upload Audio File" and uploaded_file is not None:
+        transcription_text = transcription.get("text", "")
+    else:
+        st.warning("No transcription available!")
+        transcription_text = None
+
+    if transcription_text:
+        # Add transcription to chat
+        st.session_state.messages.append({"role": "user", "content": transcription_text})
         with st.chat_message("user"):
-            st.markdown(st.session_state.live_transcription.strip())
+            st.markdown(transcription_text)
 
         # Generate assistant response
         formatted_messages = [
@@ -109,35 +133,3 @@ if st.button("Send Transcription to Chat"):
         audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         tts.save(audio_file.name)
         st.audio(audio_file.name, format="audio/mp3")
-
-        # Clear live transcription after sending
-        st.session_state.live_transcription = ""
-
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Manual Text Input for Chat
-if prompt := st.chat_input("Type your message here..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Generate assistant response
-    formatted_messages = [
-        HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"])
-        for m in st.session_state.messages
-    ]
-    response = model.predict_messages(formatted_messages)
-    st.session_state.messages.append({"role": "assistant", "content": response.content})
-
-    # Display response
-    with st.chat_message("assistant"):
-        st.markdown(response.content)
-
-    # Convert response to audio
-    tts = gTTS(response.content)
-    audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-    tts.save(audio_file.name)
-    st.audio(audio_file.name, format="audio/mp3")
