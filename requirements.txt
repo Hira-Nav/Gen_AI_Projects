@@ -3,7 +3,7 @@ langchain
 langchain_openai
 langchain_community
 openai
-openai_whisper
+openai-whisper
 torch
 soundfile
 streamlit-webrtc
