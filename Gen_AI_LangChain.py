@@ -5,7 +5,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage
 from gtts import gTTS
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
-import whisper
+from openai-whisper import whisper
 import tempfile
 import os
 import numpy as np
