@@ -1,7 +1,7 @@
 #llm-quickstart model https://docs.streamlit.io/develop/tutorials/llms/llm-quickstart
 
 import streamlit as st
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage
 from gtts import gTTS
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
