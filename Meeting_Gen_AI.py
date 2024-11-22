@@ -70,12 +70,15 @@ if st.button("Generate RACI Recommendations"):
             {"role": "user", "content": f"Suggest a list of attendees for a {meeting_type} meeting with the following objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}."}
         ],
         max_tokens=150)
+        
+        # Parse response from the API
+        ai_suggestions = response["choices"][0]["message"]["content"].strip()
         st.markdown("### AI Suggestions")
-        st.write(response.choices[0].message.content.strip())
+        st.write(ai_suggestions)  # This now works because ai_suggestions is defined above
     except Exception as e:
-        st.error("An error occurred while calling the OpenAI API.")
-        st.write(traceback.format_exc())  # Log detailed traceback for debugging
-
+        st.error("Failed to generate AI suggestions.")
+        st.write(f"Error Details: {e}")
+        
     # Extract roles and names for modification
     suggested_roles = [{"Role": role, "Explanation": explanation} 
                        for suggestion in ai_suggestions 
