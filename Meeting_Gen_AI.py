@@ -1,4 +1,29 @@
 # Meeting Gen AI for StreamLit
+
+# Meeting Gen AI for StreamLit
+import subprocess
+import sys
+import os
+
+def install_package(package):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+    except Exception as e:
+        print(f"Error installing {package}: {e}")
+
+required_packages = [
+    "streamlit",
+    "pandas",
+    "openai",
+    "plotly"
+]
+
+for package in required_packages:
+    try:
+        __import__(package.split("==")[0])
+    except ImportError:
+        install_package(package)
+
 import streamlit as st
 import pandas as pd
 import openai
