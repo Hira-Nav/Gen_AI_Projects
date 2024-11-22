@@ -25,7 +25,7 @@ for package in required_packages:
 # Import libraries after installation
 import streamlit as st
 import pandas as pd
-from openai import OpenAI
+from openai
 import plotly.graph_objects as go
 import traceback  # To capture and display detailed error traces
 
