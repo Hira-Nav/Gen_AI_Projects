@@ -61,22 +61,21 @@ selected_roles = st.multiselect("Select Required Roles:", roles)
 
 # Step 4: AI-Powered RACI Suggestions
 if st.button("Generate RACI Recommendations"):
-    # Mock data for RACI suggestion
-    raci_data = {
-        "Role": selected_roles,
-        "Responsibility": ["Responsible" if r == "Task Owner" else "Consulted" for r in selected_roles]
-    }
-    raci_df = pd.DataFrame(raci_data)
-    st.dataframe(raci_df)
-
-    # Deprecated OpenAI API
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"Suggest a list of attendees for a {meeting_type} meeting with the following objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}.",
-        max_tokens=150
-    )
-    st.markdown("### AI Suggestions")
-    st.write(response.choices[0].text.strip())
+    try:
+        st.write("Preparing to call OpenAI ChatCompletion API...")  # Debug before API call
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant for planning effective meetings."},
+                {"role": "user", "content": f"Suggest a list of attendees for a {meeting_type} meeting with the following objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}."}
+            ],
+            max_tokens=150
+        )
+        st.markdown("### AI Suggestions")
+        st.write(response["choices"][0]["message"]["content"].strip())
+    except Exception as e:
+        st.error("An error occurred while calling the OpenAI API.")
+        st.write(traceback.format_exc())  # Log detailed traceback for debugging
         
     # Extract roles and names for modification
     suggested_roles = [{"Role": role, "Explanation": explanation} 
