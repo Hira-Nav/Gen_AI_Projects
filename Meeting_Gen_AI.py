@@ -38,7 +38,7 @@ if not api_key:
     st.stop()
 
 # Initialize OpenAI API Key
-client = OpenAI(api_key=api_key)
+client = openai(api_key=api_key)
 
 # Title of the App
 st.title("Meeting Agents - Gen AI Solution")
