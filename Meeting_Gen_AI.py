@@ -31,6 +31,14 @@ import pandas as pd
 import openai
 import plotly.graph_objects as go
 
+# Request OpenAI API Key from the User
+st.sidebar.title("API Configuration")
+api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+
+if not api_key:
+    st.warning("Please enter your OpenAI API Key in the sidebar to continue.")
+    st.stop()
+
 # Initialize OpenAI API Key
 openai.api_key = st.secrets["openai_api_key"]
 
