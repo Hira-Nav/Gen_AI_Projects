@@ -27,6 +27,7 @@ import streamlit as st
 import pandas as pd
 import openai
 import plotly.graph_objects as go
+import traceback  # To capture and display detailed error traces
 
 # Request OpenAI API Key from the User
 st.sidebar.title("API Configuration")
