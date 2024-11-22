@@ -1,4 +1,23 @@
 # Meeting Gen AI for StreamLit
+import subprocess
+import sys
+
+# Install dependencies from requirements.txt
+def install_requirements():
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+    except Exception as e:
+        print(f"Error installing requirements: {e}")
+        sys.exit(1)
+
+# Install requirements
+install_requirements()
+
+# Import libraries after installation
+import streamlit as st
+import pandas as pd
+import openai
+import plotly.graph_objects as go
 
 # Initialize OpenAI API Key
 openai.api_key = st.secrets["openai_api_key"]
