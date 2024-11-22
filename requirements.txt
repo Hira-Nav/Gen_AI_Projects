@@ -5,11 +5,13 @@ streamlit-webrtc
 
 
 # Language Models and AI Frameworks
+openai==0.28
+whisper
 langchain
 langchain_openai
 langchain_community
-openai==0.28
-whisper
+
+
 
 # Audio Processing
 torch
