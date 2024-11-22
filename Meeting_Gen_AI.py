@@ -59,32 +59,36 @@ meeting_objective = st.text_area(
 roles = ["Stakeholder", "Analyst", "Task Owner", "Project Manager", "Sponsor"]
 selected_roles = st.multiselect("Select Required Roles:", roles)
 
-# Step 4: AI-Powered Suggestions for Key People
-if st.button("Identify Key People"):
-    if selected_roles:
-        # Generate suggestions for key attendees using OpenAI API
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f"For a {meeting_type} meeting with the objective: {meeting_objective}, and roles: {', '.join(selected_roles)}, who are the key attendees? Provide a brief explanation for each role.",
-            max_tokens=200
-        )
-        ai_suggestions = response.choices[0].text.strip().split("\n")
-        
-        # Display suggestions
-        st.markdown("### Key People Identified by AI")
-        st.write("\n".join(ai_suggestions))
-        
-        # Extract roles and names for modification
-        suggested_roles = [{"Role": role, "Explanation": explanation} 
-                           for suggestion in ai_suggestions 
-                           if (role := suggestion.split(":")[0].strip()) 
-                           and (explanation := ":".join(suggestion.split(":")[1:]).strip())]
+# Step 4: AI-Powered RACI Suggestions
+if st.button("Generate RACI Recommendations"):
+    # Mock data for RACI suggestion
+    raci_data = {
+        "Role": selected_roles,
+        "Responsibility": ["Responsible" if r == "Task Owner" else "Consulted" for r in selected_roles]
+    }
+    raci_df = pd.DataFrame(raci_data)
+    st.dataframe(raci_df)
 
-        # Display suggested attendees in a table format
-        st.session_state["suggested_roles"] = suggested_roles
-        st.dataframe(pd.DataFrame(suggested_roles))
-    else:
-        st.warning("Please select at least one role to proceed.")
+    # Deprecated OpenAI API
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"Suggest a list of attendees for a {meeting_type} meeting with the following objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}.",
+        max_tokens=150
+    )
+    st.markdown("### AI Suggestions")
+    st.write(response.choices[0].text.strip())
+        
+    # Extract roles and names for modification
+    suggested_roles = [{"Role": role, "Explanation": explanation} 
+                       for suggestion in ai_suggestions 
+                       if (role := suggestion.split(":")[0].strip()) 
+                       and (explanation := ":".join(suggestion.split(":")[1:]).strip())]
+
+    # Display suggested attendees in a table format
+    st.session_state["suggested_roles"] = suggested_roles
+    st.dataframe(pd.DataFrame(suggested_roles))
+else:
+    st.warning("Please select at least one role to proceed.")
 
 # Step 5: Option to Remove People
 if "suggested_roles" in st.session_state:
