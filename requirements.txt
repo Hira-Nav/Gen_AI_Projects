@@ -2,13 +2,13 @@
 streamlit
 streamlit-searchbox
 streamlit-webrtc
-openai==0.28
+
 
 # Language Models and AI Frameworks
 langchain
 langchain_openai
 langchain_community
-openai
+openai==0.28
 whisper
 
 # Audio Processing
