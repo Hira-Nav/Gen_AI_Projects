@@ -2,6 +2,7 @@
 streamlit
 streamlit-searchbox
 streamlit-webrtc
+openai==0.28
 
 # Language Models and AI Frameworks
 langchain
