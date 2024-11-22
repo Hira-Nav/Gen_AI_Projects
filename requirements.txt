@@ -5,7 +5,7 @@ streamlit-webrtc
 
 
 # Language Models and AI Frameworks
-openai==0.28
+openai
 whisper
 langchain
 langchain_openai
