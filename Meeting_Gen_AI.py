@@ -3,26 +3,27 @@ import subprocess
 import sys
 import os
 
-# Upgrade pip and install requirements
-def setup_environment():
-    try:
-        # Upgrade pip
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-        print("Pip upgraded successfully.")
-        
-        # Check if requirements.txt exists
-        if os.path.exists("requirements.txt"):
-            print("Installing dependencies from requirements.txt...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-        else:
-            print("Error: requirements.txt not found. Please provide a valid requirements file.")
-            sys.exit(1)
-    except Exception as e:
-        print(f"Error during setup: {e}")
-        sys.exit(1)
+import subprocess
+import sys
 
-# Set up the environment
-setup_environment()
+def install_package(package):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+    except Exception as e:
+        print(f"Error installing {package}: {e}")
+
+required_packages = [
+    "streamlit",
+    "pandas",
+    "openai",
+    "plotly"
+]
+
+for package in required_packages:
+    try:
+        __import__(package.split("==")[0])
+    except ImportError:
+        install_package(package)
 
 # Import libraries after installation
 import streamlit as st
