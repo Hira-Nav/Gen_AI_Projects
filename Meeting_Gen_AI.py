@@ -25,7 +25,7 @@ for package in required_packages:
 # Import libraries after installation
 import streamlit as st
 import pandas as pd
-import openai
+from openai import OpenAI
 import plotly.graph_objects as go
 import traceback  # To capture and display detailed error traces
 
@@ -38,7 +38,7 @@ if not api_key:
     st.stop()
 
 # Initialize OpenAI API Key
-openai.api_key = api_key
+client = OpenAI(api_key=api_key)
 
 # Title of the App
 st.title("Meeting Agents - Gen AI Solution")
@@ -64,20 +64,18 @@ selected_roles = st.multiselect("Select Required Roles:", roles)
 if st.button("Generate RACI Recommendations"):
     try:
         st.write("Preparing to call OpenAI ChatCompletion API...")  # Debug before API call
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant for planning effective meetings."},
-                {"role": "user", "content": f"Suggest a list of attendees for a {meeting_type} meeting with the following objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}."}
-            ],
-            max_tokens=150
-        )
+        response = client.chat.completions.create(model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant for planning effective meetings."},
+            {"role": "user", "content": f"Suggest a list of attendees for a {meeting_type} meeting with the following objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}."}
+        ],
+        max_tokens=150)
         st.markdown("### AI Suggestions")
-        st.write(response["choices"][0]["message"]["content"].strip())
+        st.write(response.choices[0].message.content.strip())
     except Exception as e:
         st.error("An error occurred while calling the OpenAI API.")
         st.write(traceback.format_exc())  # Log detailed traceback for debugging
-        
+
     # Extract roles and names for modification
     suggested_roles = [{"Role": role, "Explanation": explanation} 
                        for suggestion in ai_suggestions 
@@ -93,13 +91,13 @@ else:
 # Step 5: Option to Remove People
 if "suggested_roles" in st.session_state:
     st.markdown("### Modify Attendees")
-    
+
     # Allow users to select roles to remove
     roles_to_remove = st.multiselect(
         "Select Roles to Remove:", 
         [person["Role"] for person in st.session_state["suggested_roles"]]
     )
-    
+
     # Remove selected roles
     if st.button("Update Attendees"):
         st.session_state["suggested_roles"] = [
@@ -107,7 +105,7 @@ if "suggested_roles" in st.session_state:
             if person["Role"] not in roles_to_remove
         ]
         st.success("Attendees updated.")
-    
+
     # Show updated attendees
     st.markdown("### Final Attendee List")
     st.dataframe(pd.DataFrame(st.session_state["suggested_roles"]))
@@ -118,7 +116,7 @@ if st.checkbox("Show Meeting Room Layout"):
         attendee_roles = [person["Role"] for person in st.session_state["suggested_roles"]]
     else:
         attendee_roles = roles
-    
+
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
         r=[1] * len(attendee_roles),
@@ -132,4 +130,3 @@ if st.checkbox("Show Meeting Room Layout"):
 # Step 7: Role Play Simulation (Placeholder)
 if st.button("Start Role-Play Simulation"):
     st.markdown("### Role-Play Simulation")
-    st.write("This will simulate a conversation between the meeting attendees. (Coming soon!)")
