@@ -1,7 +1,4 @@
-import streamlit as st
-import pandas as pd
-import openai
-import plotly.graph_objects as go
+# Meeting Gen AI for StreamLit
 
 # Initialize OpenAI API Key
 openai.api_key = st.secrets["openai_api_key"]
