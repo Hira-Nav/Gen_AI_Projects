@@ -61,35 +61,29 @@ roles = ["Stakeholder", "Analyst", "Task Owner", "Project Manager", "Sponsor"]
 selected_roles = st.multiselect("Select Required Roles:", roles)
 
 # Step 4: AI-Powered RACI Suggestions
-if st.button("Generate RACI Recommendations"):
+if st.button("Identify Key People"):
     try:
-        st.write("Preparing to call OpenAI ChatCompletion API...")  # Debug before API call
-        response = client.chat.completions.create(model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant for planning effective meetings."},
-            {"role": "user", "content": f"Suggest a list of attendees for a {meeting_type} meeting with the following objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}."}
-        ],
-        max_tokens=150)
-        
-        # Parse response from the API
-        ai_suggestions = response["choices"][0]["message"]["content"].strip()
-        st.markdown("### AI Suggestions")
-        st.write(ai_suggestions)  # This now works because ai_suggestions is defined above
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant for planning effective meetings."},
+                {"role": "user", "content": f"Suggest key attendees for a {meeting_type} meeting with the objective: {meeting_objective}. Consider these roles: {', '.join(selected_roles)}."}
+            ],
+            max_tokens=200
+        )
+        ai_suggestions = response["choices"][0]["message"]["content"].strip().split("\n")
+        st.markdown("### Key People Identified by AI")
+        st.write(ai_suggestions)
     except Exception as e:
-        st.error("Failed to generate AI suggestions.")
-        st.write(f"Error Details: {e}")
-        
-    # Extract roles and names for modification
+        ai_suggestions = []  # Ensure it's initialized even if the API call fails
+        st.error(f"Failed to retrieve AI suggestions: {e}")
+
+    # Ensure ai_suggestions is defined before using it
     suggested_roles = [{"Role": role, "Explanation": explanation} 
-                       for suggestion in ai_suggestions 
+                       for suggestion in ai_suggestions
                        if (role := suggestion.split(":")[0].strip()) 
                        and (explanation := ":".join(suggestion.split(":")[1:]).strip())]
-
-    # Display suggested attendees in a table format
-    st.session_state["suggested_roles"] = suggested_roles
     st.dataframe(pd.DataFrame(suggested_roles))
-else:
-    st.warning("Please select at least one role to proceed.")
 
 # Step 5: Option to Remove People
 if "suggested_roles" in st.session_state:
