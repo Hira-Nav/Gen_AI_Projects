@@ -133,14 +133,6 @@ import streamlit as st
 import openai
 import random
 
-# Sidebar for API Key Input
-st.sidebar.title("API Configuration")
-openai.api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
-
-if not openai.api_key:
-    st.warning("Please enter your OpenAI API Key in the sidebar to continue.")
-    st.stop()
-
 # Title of the App
 st.title("Interactive Meeting Room Simulator")
 st.markdown("""
