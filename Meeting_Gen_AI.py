@@ -197,7 +197,7 @@ if roles:
         y = center_y + radius * math.sin(angle)
 
         # Generate dynamic OpenAI response
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": f"You are {role}, contributing to a {meeting_type} meeting."},
@@ -205,7 +205,7 @@ if roles:
             ],
             max_tokens=150
         )
-        ai_response = response['choices'][0]['message']['content']
+        ai_response = response.choices[0].message.content.strip().split("\n")
 
         # Add a seat with a tooltip to the meeting room
         seat_html = f"""
