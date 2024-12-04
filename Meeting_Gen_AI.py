@@ -141,6 +141,7 @@ st.markdown("""
         width: 600px;
         height: 600px;
         background-image: url('https://media.istockphoto.com/id/508209880/photo/business-team-meeting-connection-digital-technology-concept.jpg?s=612x612&w=0&k=20&c=GB4Qw5a12M8rBx1QKmfvgdAgzvqSifx4cP3GvyQoWB8='); /* Replace with your own table image URL */
+        background-size: cover;
         background-position: center;
         border-radius: 50%;
         margin: auto;
@@ -184,6 +185,7 @@ roles = st.multiselect("Invite Participants:", ["Stakeholder", "Analyst", "Task 
 
 # Generate seat positions dynamically
 if roles:
+    # Create the meeting room container
     st.markdown('<div class="meeting-room">', unsafe_allow_html=True)
 
     num_roles = len(roles)
