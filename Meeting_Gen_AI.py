@@ -70,7 +70,7 @@ if st.button("Identify Key People"):
             ],
             max_tokens=200
         )
-        ai_suggestions = response["choices"][0]["message"]["content"].strip().split("\n")
+        ai_suggestions = response.choices[0].message.content.strip().split("\n")
         st.markdown("### Key People Identified by AI")
         st.write(ai_suggestions)
     except Exception as e:
@@ -121,7 +121,7 @@ if st.button("Start Role-Play Simulation"):
             max_tokens=500
         )
         
-        role_play_output = response["choices"][0]["message"]["content"]
+        role_play_output = response.choices[0].message.content.strip().split("\n")
         st.markdown("### Simulated Meeting Dialogue")
         st.write(role_play_output)
     except Exception as e:
