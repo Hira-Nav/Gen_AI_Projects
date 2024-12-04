@@ -142,20 +142,21 @@ st.markdown("""
         width: 600px;
         height: 600px;
         background-image: url('https://media.istockphoto.com/id/508209880/photo/business-team-meeting-connection-digital-technology-concept.jpg?s=612x612&w=0&k=20&c=GB4Qw5a12M8rBx1QKmfvgdAgzvqSifx4cP3GvyQoWB8='); /* Replace with your own table image URL */
-        background-size: cover;
+        background-position: center;
         border-radius: 50%;
         margin: auto;
     }
     .seat {
         position: absolute;
-        width: 50px;
-        height: 50px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
         background-color: #ddd;
         text-align: center;
-        line-height: 50px;
-        font-size: 14px;
+        line-height: 70px;
+        font-size: 12px;
         cursor: pointer;
+        transform: translate(-50%, -50%);
     }
     .tooltip {
         visibility: hidden;
@@ -167,6 +168,9 @@ st.markdown("""
         padding: 5px;
         font-size: 12px;
         z-index: 1;
+        bottom: 110%; /* Position the tooltip above the seat */
+        left: 50%;
+        transform: translateX(-50%);
     }
     .seat:hover .tooltip {
         visibility: visible;
@@ -183,14 +187,18 @@ roles = st.multiselect("Invite Participants:", ["Stakeholder", "Analyst", "Task 
 if roles:
     st.markdown('<div class="meeting-room">', unsafe_allow_html=True)
 
-    angle_step = 360 / len(roles)
-    for i, role in enumerate(roles):
-        angle = angle_step * i
-        x = 250 + 200 * (random.random() - 0.5)
-        y = 250 + 200 * (random.random() - 0.5)
+    num_roles = len(roles)
+    radius = 250  # Distance of seats from the center
+    center_x, center_y = 300, 300  # Center of the meeting room
 
-        # Generate dynamic OpenAI responses
-        response = openai.chat.completions.create(
+    for i, role in enumerate(roles):
+        # Calculate seat position using polar coordinates
+        angle = 2 * math.pi * i / num_roles  # Divide the circle evenly
+        x = center_x + radius * math.cos(angle)
+        y = center_y + radius * math.sin(angle)
+
+        # Generate dynamic OpenAI response
+        response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": f"You are {role}, contributing to a {meeting_type} meeting."},
@@ -198,9 +206,9 @@ if roles:
             ],
             max_tokens=150
         )
-        ai_response = response.choices[0].message.content
+        ai_response = response['choices'][0]['message']['content']
 
-        # Add seats to the table
+        # Add a seat with a tooltip to the meeting room
         seat_html = f"""
         <div class="seat" style="top:{y}px;left:{x}px;">
             {role}
@@ -212,4 +220,3 @@ if roles:
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("Hover over or click on a seat to see the participant's contribution.")
-
