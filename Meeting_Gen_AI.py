@@ -127,3 +127,97 @@ if st.button("Start Role-Play Simulation"):
     except Exception as e:
         st.error(f"Failed to simulate role-play: {e}")
         st.write(traceback.format_exc())
+
+
+import streamlit as st
+import openai
+import random
+
+# Sidebar for API Key Input
+st.sidebar.title("API Configuration")
+openai.api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+
+if not openai.api_key:
+    st.warning("Please enter your OpenAI API Key in the sidebar to continue.")
+    st.stop()
+
+# Title of the App
+st.title("Interactive Meeting Room Simulator")
+st.markdown("""
+<style>
+    .meeting-room {
+        position: relative;
+        width: 600px;
+        height: 600px;
+        background-image: url('https://media.istockphoto.com/id/508209880/photo/business-team-meeting-connection-digital-technology-concept.jpg?s=612x612&w=0&k=20&c=GB4Qw5a12M8rBx1QKmfvgdAgzvqSifx4cP3GvyQoWB8='); /* Replace with your own table image URL */
+        background-size: cover;
+        border-radius: 50%;
+        margin: auto;
+    }
+    .seat {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #ddd;
+        text-align: center;
+        line-height: 50px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .tooltip {
+        visibility: hidden;
+        position: absolute;
+        background-color: black;
+        color: #fff;
+        text-align: center;
+        border-radius: 5px;
+        padding: 5px;
+        font-size: 12px;
+        z-index: 1;
+    }
+    .seat:hover .tooltip {
+        visibility: visible;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Input for meeting type and roles
+meeting_type = st.selectbox("Select Meeting Type:", ["Discovery", "Strategy", "Board Review"])
+meeting_objective = st.text_area("Meeting Objective:", "Write the purpose of your meeting.")
+roles = st.multiselect("Invite Participants:", ["Stakeholder", "Analyst", "Task Owner", "Project Manager", "Sponsor"])
+
+# Generate seat positions dynamically
+if roles:
+    st.markdown('<div class="meeting-room">', unsafe_allow_html=True)
+
+    angle_step = 360 / len(roles)
+    for i, role in enumerate(roles):
+        angle = angle_step * i
+        x = 250 + 200 * (random.random() - 0.5)
+        y = 250 + 200 * (random.random() - 0.5)
+
+        # Generate dynamic OpenAI responses
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": f"You are {role}, contributing to a {meeting_type} meeting."},
+                {"role": "user", "content": f"What would your contribution be to this objective: {meeting_objective}?"}
+            ],
+            max_tokens=150
+        )
+        ai_response = response.choices[0].message.content
+
+        # Add seats to the table
+        seat_html = f"""
+        <div class="seat" style="top:{y}px;left:{x}px;">
+            {role}
+            <div class="tooltip">{ai_response}</div>
+        </div>
+        """
+        st.markdown(seat_html, unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.write("Hover over or click on a seat to see the participant's contribution.")
+
