@@ -62,7 +62,7 @@ selected_roles = st.multiselect("Select Required Roles:", roles)
 if st.button("Identify Key People"):
     try:
         st.write("Calling OpenAI to identify key people...")
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4",  # or "gpt-3.5-turbo"
             messages=[
                 {"role": "system", "content": "You are a helpful assistant for planning effective meetings."},
@@ -112,7 +112,7 @@ if st.button("Start Role-Play Simulation"):
         )
 
         st.write("Generating role-play simulation...")
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a meeting simulation assistant."},
