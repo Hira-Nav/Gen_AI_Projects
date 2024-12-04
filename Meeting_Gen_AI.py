@@ -1,9 +1,8 @@
 # Meeting Gen AI for StreamLit
-
-# Meeting Gen AI for StreamLit
 import subprocess
 import sys
 import os
+import math
 
 def install_package(package):
     try:
