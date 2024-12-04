@@ -190,7 +190,7 @@ if roles:
         y = 250 + 200 * (random.random() - 0.5)
 
         # Generate dynamic OpenAI responses
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": f"You are {role}, contributing to a {meeting_type} meeting."},
