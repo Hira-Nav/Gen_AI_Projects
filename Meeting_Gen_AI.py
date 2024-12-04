@@ -101,8 +101,29 @@ if st.checkbox("Show Meeting Room Layout"):
     fig.update_layout(polar=dict(angularaxis=dict(direction="clockwise")))
     st.plotly_chart(fig)
 
-# Step 6: Role Play Simulation (Placeholder)
+# Step 6: Role Play Simulation
 if st.button("Start Role-Play Simulation"):
     st.markdown("### Role-Play Simulation")
-    st.write("This will simulate a conversation between the meeting attendees. (Coming soon!)")
+    try:
+        # Create a role-play conversation
+        role_play_prompt = (
+            f"Simulate a {meeting_type} meeting with the following objective: {meeting_objective}. "
+            f"The attendees are {', '.join(selected_roles)}. Generate a dialogue showing their contributions."
+        )
 
+        st.write("Generating role-play simulation...")
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a meeting simulation assistant."},
+                {"role": "user", "content": role_play_prompt}
+            ],
+            max_tokens=500
+        )
+        
+        role_play_output = response["choices"][0]["message"]["content"]
+        st.markdown("### Simulated Meeting Dialogue")
+        st.write(role_play_output)
+    except Exception as e:
+        st.error(f"Failed to simulate role-play: {e}")
+        st.write(traceback.format_exc())
